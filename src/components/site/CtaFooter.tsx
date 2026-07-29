@@ -33,13 +33,13 @@ export default function CtaFooter() {
 
           <div className="relative z-10 flex flex-wrap gap-3">
             <Link
-              href="/app/dashboard"
+              href="https://agrovision-ai-gray.vercel.app/"
               className="rounded-xl bg-leaf px-[26px] py-[15px] font-medium text-[15px] text-[#0C130F] transition-colors hover:bg-[var(--color-accent-hover)]"
             >
               Live demo
             </Link>
             <a
-              href="#"
+              href="https://github.com/festusisaac/Agrovision-AI"
               className="rounded-xl border px-[26px] py-[15px] font-medium text-[15px]"
               style={{ borderColor: "rgba(242,240,230,0.2)" }}
             >
