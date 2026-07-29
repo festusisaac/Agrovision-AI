@@ -1,26 +1,158 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0c130f;
+  --background-panel: #0a0f0c;
+  --foreground: #f2f0e6;
+  --color-fg-muted: oklch(0.8 0.015 150);
+  --color-fg-dim: oklch(0.74 0.015 150);
+  --color-fg-faint: oklch(0.65 0.015 150);
+
+  --color-leaf: oklch(0.84 0.17 132); /* accent (lime) */
+  --color-leaf-dark: oklch(0.88 0.14 132); /* accent-strong, for accent text on dark surfaces */
+  --color-accent-hover: oklch(0.92 0.12 132);
+  --color-secondary: oklch(0.84 0.17 132);
+  --color-accent: oklch(0.84 0.17 132);
+  --color-lime: oklch(0.84 0.17 132);
+  --color-warn: oklch(0.8 0.16 70); /* amber */
+  --color-earth: oklch(0.8 0.16 70);
+  --color-gold: oklch(0.8 0.16 70);
+
+  --color-surface: rgba(242, 240, 230, 0.05);
+  --color-surface-muted: rgba(242, 240, 230, 0.08);
+  --color-border: rgba(242, 240, 230, 0.09);
+  --color-text-light: oklch(0.74 0.015 150);
+
+  --color-accent-tint-fill: rgba(163, 230, 53, 0.07);
+  --color-accent-tint-border: rgba(163, 230, 53, 0.22);
+  --color-dark-on-accent: #0a0f0c;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-panel: var(--background-panel);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-dim: var(--color-fg-dim);
+  --color-fg-faint: var(--color-fg-faint);
+  --color-warn: var(--color-warn);
+  --color-leaf: var(--color-leaf);
+  --color-leaf-dark: var(--color-leaf-dark);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-lime: var(--color-lime);
+  --color-earth: var(--color-earth);
+  --color-gold: var(--color-gold);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-text-light: var(--color-text-light);
+  --font-sans: var(--font-plex);
+  --font-heading: var(--font-space);
+  --font-mono: var(--font-jbmono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--color-leaf);
+  color: #0c130f;
+}
+
+.font-heading {
+  font-family: var(--font-space), "Space Grotesk", sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-jbmono), "JetBrains Mono", monospace;
+}
+
+/* --- Scan overlay (app/scan analyzing state) --- */
+
+@keyframes agv-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+.animate-agv-pulse {
+  animation: agv-pulse 2s infinite;
+}
+
+@keyframes agv-sweep {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(480%);
+  }
+}
+
+.animate-agv-sweep {
+  /* alternate (rather than a hard reset each loop) so the band glides
+     smoothly up and down like an active scanner instead of blinking. */
+  animation: agv-sweep 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes agv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-agv-rise {
+  animation: agv-rise 0.3s ease both;
+}
+
+@keyframes bounce-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-dot {
+  animation: bounce-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-leaf) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-leaf) 0%, transparent);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Default browser print margins (~19mm) waste real estate on short reports
+   like the diagnosis printout — tighten them so content fits fewer pages. */
+@media print {
+  @page {
+    margin: 12mm 14mm;
+  }
 }
