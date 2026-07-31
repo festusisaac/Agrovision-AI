@@ -7,6 +7,7 @@ import { hasProfile } from "@/lib/profile";
 import Sidebar from "@/components/app/Sidebar";
 import MobileNav from "@/components/app/MobileNav";
 import AlertToast from "@/components/app/AlertToast";
+import UssdPromoCard from "@/components/app/UssdPromoCard";
 
 const REDIRECT_FALLBACK_MS = 2500;
 
@@ -51,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="min-w-0 flex-1 px-4 pt-6 pb-16 sm:px-6 lg:px-11 lg:pt-[34px] lg:pb-[90px]">{children}</main>
       </div>
       <AlertToast />
+      <UssdPromoCard />
     </AppPrefsProvider>
   );
 }
