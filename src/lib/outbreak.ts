@@ -1,13 +1,13 @@
-// Village watch has no real backend yet — there is no multi-tenant database
-// of other farms' scans to aggregate (this app is device-local by design;
-// see the "stored on this device only" promise everywhere else in the UI).
-// Everything geometric here (distance, bearing, GPS rounding, centroid
-// displacement, map projection) is real, reusable math that would work
-// unchanged against a real synced dataset. The FARMS array below is the one
-// deliberately-fabricated piece — illustrative seed data, clearly disclosed
-// in the UI — standing in for scans that would otherwise come from a real
-// sync service. "You" is always real: it's derived from this device's own
-// profile + history.
+// Village Watch is backed by a real Postgres database (see src/lib/db.ts) —
+// realFarmsNear below queries it directly. Everything geometric here
+// (distance, bearing, GPS rounding, centroid displacement, map projection)
+// is real math shared by every caller (the web outbreaks route, the USSD
+// handler). SEED_FARMS is the one deliberately-fabricated piece —
+// illustrative seed data, clearly disclosed via the `demo` flag every
+// caller returns — used only when there isn't yet enough real nearby data
+// to aggregate without identifying a single farm (see MIN_REAL_FARMS).
+
+import { sql, ensureSchema } from "./db";
 
 export type OutbreakStatus = "confirmed" | "suspected" | "clear";
 
@@ -190,5 +190,142 @@ export function estimateSpread(confirmed: { distanceKm: number; bearingDeg: numb
     kmPerDay: Math.round((distanceMoved / timeSpanDays) * 10) / 10,
     bearingDeg,
     bearingLabel: bearingLabel(bearingDeg),
+  };
+}
+
+// --- Real vs. demo aggregation, shared by every caller (web /api/outbreaks
+// route and the USSD handler) so there's exactly one place that decides
+// when real data is safe to show. ---
+
+const RECENCY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const MIN_REAL_FARMS = 3; // below this, real data would be individually identifiable — show clearly-labelled demo data instead
+
+interface ScanRow {
+  device_id: string;
+  lat: number;
+  lon: number;
+  crop: string;
+  status: OutbreakStatus;
+  label: string;
+  created_at: number;
+}
+
+export interface ResolvedFarm {
+  id: string;
+  name: string;
+  distanceKm: number;
+  bearingDeg: number;
+  bearing: string;
+  crop: string;
+  status: OutbreakStatus;
+  daysAgo: number;
+  x: number;
+  y: number;
+}
+
+function resolveFromCenter(center: { lat: number; lon: number }, lat: number, lon: number) {
+  const distanceKm = Math.round(haversineKm(center.lat, center.lon, lat, lon) * 10) / 10;
+  const bearingDeg = bearingDegBetween(center.lat, center.lon, lat, lon);
+  const { x, y } = projectToMap(distanceKm, bearingDeg);
+  return { distanceKm, bearingDeg, bearing: bearingLabel(bearingDeg), x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+}
+
+/** Real scans, privacy-suppressed (any 1 km cluster with fewer than 3 farms is dropped so no single farm is identifiable). */
+async function realFarmsNear(center: { lat: number; lon: number }, radiusKm: number, excludeDeviceId: string): Promise<ResolvedFarm[]> {
+  let rows: ScanRow[];
+  try {
+    await ensureSchema();
+    rows = (await sql`
+      SELECT device_id, lat, lon, crop, status, label, created_at FROM scans
+      WHERE created_at > ${Date.now() - RECENCY_WINDOW_MS} AND device_id != ${excludeDeviceId}
+    `) as unknown as ScanRow[];
+  } catch {
+    // No database configured (or unreachable) — fall through to zero real
+    // farms so the caller degrades to demo data instead of erroring. The
+    // `demo: true` flag on the response still reports this honestly.
+    return [];
+  }
+
+  const suppressed = suppressSmallCells(rows, 3);
+
+  return suppressed
+    .map((r, i) => {
+      const geo = resolveFromCenter(center, r.lat, r.lon);
+      return {
+        id: `r${i}`,
+        // Real farmers' names are never collected against scans in the
+        // first place — label anonymously rather than exposing anything.
+        name: `Nearby farm ${i + 1}`,
+        crop: r.crop,
+        status: r.status,
+        daysAgo: Math.floor((Date.now() - r.created_at) / (24 * 60 * 60 * 1000)),
+        ...geo,
+      };
+    })
+    .filter((f) => f.distanceKm <= radiusKm);
+}
+
+/** Illustrative seed farms — see the module comment above. Used only when real data is too sparse to safely show. */
+function demoFarmsNear(center: { lat: number; lon: number }, radiusKm: number): ResolvedFarm[] {
+  return SEED_FARMS.filter((f) => f.distanceKm <= radiusKm).map((f, i) => {
+    // Real chain: seed distance/bearing -> destination point -> round to
+    // 500 m for privacy -> recompute the real distance/bearing from the
+    // ROUNDED point, so the displayed numbers reflect what's actually kept.
+    const raw = destinationPoint(center.lat, center.lon, f.bearingDeg, f.distanceKm);
+    const rounded = roundCoordTo500m(raw.lat, raw.lon);
+    const geo = resolveFromCenter(center, rounded.lat, rounded.lon);
+    return { id: `f${i}`, name: f.name, crop: f.crop, status: f.status, daysAgo: f.daysAgo, ...geo };
+  });
+}
+
+export interface OutbreakSummary {
+  center: { lat: number; lon: number };
+  radiusKm: number;
+  scans: number;
+  confirmed: number;
+  suspected: number;
+  clear: number;
+  spreadKmPerDay: number | null;
+  spreadBearing: string | null;
+  originDistanceKm: number | null;
+  originDaysAgo: number | null;
+  farms: ResolvedFarm[];
+  demo: boolean;
+}
+
+/**
+ * The single source of truth for "what does Village Watch look like around
+ * this point" — prefers real opted-in scans from the last 7 days, falling
+ * back to a clearly-labelled illustrative seed when there aren't yet enough
+ * real nearby farms to aggregate safely. Shared by /api/outbreaks (web) and
+ * /api/ussd (feature-phone) so both read exactly the same real data through
+ * exactly the same privacy rules — no duplicated aggregation logic.
+ */
+export async function getOutbreakSummary(
+  center: { lat: number; lon: number },
+  radiusKm: number,
+  excludeDeviceId: string
+): Promise<OutbreakSummary> {
+  const real = await realFarmsNear(center, radiusKm, excludeDeviceId);
+  const demo = real.length >= MIN_REAL_FARMS ? null : demoFarmsNear(center, radiusKm);
+  const farms = demo ?? real;
+
+  const confirmedFarms = farms.filter((f) => f.status === "confirmed");
+  const spread = estimateSpread(confirmedFarms.map((f) => ({ distanceKm: f.distanceKm, bearingDeg: f.bearingDeg, daysAgo: f.daysAgo })));
+  const origin = [...confirmedFarms].sort((a, b) => b.daysAgo - a.daysAgo)[0];
+
+  return {
+    center,
+    radiusKm,
+    scans: farms.length,
+    confirmed: confirmedFarms.length,
+    suspected: farms.filter((f) => f.status === "suspected").length,
+    clear: farms.filter((f) => f.status === "clear").length,
+    spreadKmPerDay: spread?.kmPerDay ?? null,
+    spreadBearing: spread?.bearingLabel ?? null,
+    originDistanceKm: origin?.distanceKm ?? null,
+    originDaysAgo: origin?.daysAgo ?? null,
+    farms,
+    demo: demo !== null,
   };
 }

@@ -25,17 +25,59 @@ If you only have a few minutes, this is the path that shows the most:
    falls back to a **clearly labeled demo dataset** so the map is never empty during a demo. The
    "Send live alert" button broadcasts to every open tab of the app in real time.
 5. **Assistant** (`/app/assistant`) — free-form chat, with voice input/output (see the browser
-   note below — voice input needs `https://` or `localhost`).
+   note below — voice input needs `https://` or `localhost`, not a bare IP address).
 6. Switch the language dropdown (top of the sidebar) to Hausa/Yorùbá/Igbo — the whole UI and
    Gemma's own responses re-render in that language.
+7. **USSD** (`/api/ussd`) — the same app, reachable from a basic feature phone with zero data
+   plan, over a telecom gateway. See [USSD access](#ussd-access-feature-phone-demo) below.
+
+---
+
+## USSD access (feature-phone demo)
+
+Everything above needs a smartphone with internet — which excludes exactly the farmers this app
+names as the core problem ("1 extension officer per ~1,800–2,500 farmers", "no signal, no
+service"). USSD (the `*123#` text-menu system that works on **any** phone, including basic
+feature phones, with **zero data plan**, over the regular GSM network) is the one channel that
+reaches that farmer today. Dialing in gets two real features, both answered by the same Gemma 4
+route handler as the rest of the app: a free-text farming question, and a read-only summary of
+Village Watch's real outbreak data for the caller's state.
+
+This needs **no new environment variables or dependencies** — the webhook is inbound-only
+(`src/app/api/ussd/route.ts`); it reuses the exact same `GOOGLE_API_KEY`/`DATABASE_URL` already
+configured above, and degrades the same honest way the rest of the app does when either is unset
+(a clearly-labeled demo message instead of a crash).
+
+A real, dial-able shortcode requires telecom carrier approval that takes weeks — not achievable
+for this submission. Instead, test it with **Africa's Talking's free USSD sandbox**, built for
+exactly this:
+
+1. Sign up free at [africastalking.com](https://account.africastalking.com/) — no card required.
+   Signup auto-provisions a **Sandbox** app with a USSD channel already attached.
+2. The sandbox's simulator calls a *public* URL, so either deploy to Vercel and use
+   `https://<your-app>.vercel.app/api/ussd`, or run `npm run dev` locally and tunnel it (e.g.
+   `ngrok http 3000`) for a public callback URL during local testing.
+3. In the sandbox dashboard → **USSD**, set the callback URL to that address.
+4. Open the **USSD Simulator** in the dashboard, enter any test phone number, and dial in. Walk
+   the menu: pick a language → "Ask a farming question" → type something → get Gemma's answer;
+   or → "Outbreaks near me" → pick a state → get a real summary from the same data Village Watch
+   uses on the web.
+
+No phone required to test this yourself, either — the webhook is a plain POST endpoint:
+```bash
+curl -s -X POST http://localhost:3000/api/ussd --data "sessionId=t1&text="
+curl -s -X POST http://localhost:3000/api/ussd --data "sessionId=t1&text=1"
+curl -s -X POST http://localhost:3000/api/ussd --data "sessionId=t1&text=1*1"
+curl -s -X POST http://localhost:3000/api/ussd --data "sessionId=t1&text=1*1*How+do+I+treat+maize+rust%3F"
+```
 
 ---
 
 ## Tech stack
 
 - **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript** + **Tailwind CSS v4**
-- **Gemma 4** — swappable inference backend: Google (Gemini API), Hugging Face, or fully local
-  via **Ollama** (same code path, one env var switches all three)
+- **Gemma 4** — swappable inference backend: Google (Gemini API) or fully local via **Ollama**
+  (same code path, one env var switches between them)
 - **Neon (Postgres)** — the one piece of real shared/cross-device state (Village Watch)
 - **YarnGPT** — text-to-speech in Nigerian languages, with the browser's Web Speech API as a
   built-in fallback
@@ -71,10 +113,9 @@ cp .env.local.example .env.local
 
 | Variable | Required? | What it does |
 |---|---|---|
-| `GEMMA_PROVIDER` | No (defaults to `google`) | `google`, `huggingface`, or `local` — picks which backend serves Gemma 4 |
+| `GEMMA_PROVIDER` | No (defaults to `google`) | `google` or `local` — picks which backend serves Gemma 4 |
 | `GOOGLE_API_KEY` | **Yes, for real AI responses** | Free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey) — no card required |
 | `GOOGLE_MODEL` | No | Defaults to `gemma-4-26b-a4b-it` |
-| `HF_API_KEY` / `HF_PROVIDER` / `HF_MODEL` | Only if `GEMMA_PROVIDER=huggingface` | Alternative cloud backend |
 | `OLLAMA_BASE_URL` / `OLLAMA_TEXT_MODEL` / `OLLAMA_VISION_MODEL` | Only if `GEMMA_PROVIDER=local` | Fully offline inference — run `ollama pull gemma3:2b` and `gemma3:4b` first |
 | `DATABASE_URL` | Only for Village Watch's real data | A Neon/Postgres connection string — see below |
 | `YARNGPT_API_KEY` + `YARNGPT_VOICE_*` | No | Voice output; without it, the app falls back to the browser's built-in Web Speech API automatically |
@@ -120,6 +161,7 @@ src/app/app/                # the main product shell (sidebar nav)
   ├─ assistant/              # free-form chat (text + voice)
   └─ history/                # past scans, saved locally
 src/app/api/                # route handlers (diagnose, chat, outbreaks, alerts, tts, weather...)
+src/app/api/ussd/           # USSD webhook (Africa's Talking) — feature-phone access, no internet needed
 src/lib/                    # Gemma client, i18n, geo/privacy math, device-local storage
 ```
 
@@ -131,9 +173,9 @@ src/lib/                    # Gemma client, i18n, geo/privacy math, device-local
 - **Privacy-by-design on Village Watch.** Farmer GPS is rounded to ~500 m before it's ever
   written to the database, and any cluster of fewer than 3 nearby farms is suppressed entirely
   (real distance-based k-anonymity, not a naive grid) so no single farm is ever identifiable.
-- **Cloud today, on-device tomorrow.** Swapping `GEMMA_PROVIDER` between `google`/`huggingface`/
-  `local` changes only the route handler's inference call — the client, prompts, and UI are
-  identical either way.
+- **Cloud today, on-device tomorrow.** Swapping `GEMMA_PROVIDER` between `google`/`local`
+  changes only the route handler's inference call — the client, prompts, and UI are identical
+  either way.
 - **Everything except Village Watch is device-local.** Farm profile, diagnosis history, and
   preferences live in the browser's `localStorage`, never sent anywhere unless you explicitly
   opt in to sharing a scan with Village Watch.
