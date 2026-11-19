@@ -32,7 +32,7 @@ export default function GemmaIntegration() {
     <section id="gemma" className="border-t border-[var(--color-border)] py-24">
       <div className="grid grid-cols-1 items-start gap-10 lg:gap-16 lg:[grid-template-columns:minmax(280px,360px)_1fr]">
         <div>
-          <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">04 — Gemma 4 integration</div>
+          <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">05 — Gemma 4 Integration</div>
           <h2 className="font-heading mt-4 text-[28px] leading-[1.08] font-semibold tracking-[-0.02em] sm:text-[34px] lg:text-[42px] lg:leading-[1.05] lg:tracking-[-0.03em]">
             The model is the product, not a garnish.
           </h2>

@@ -20,7 +20,7 @@ function FlowNode({ label, accent }: { label: string; accent?: boolean }) {
 export default function Architecture() {
   return (
     <section id="architecture" className="border-t border-[var(--color-border)] py-24">
-      <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">03 — Architecture</div>
+      <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">04 — Edge Architecture</div>
       <h2 className="font-heading mt-4 mb-3 max-w-[24ch] text-[28px] leading-[1.08] font-semibold tracking-[-0.02em] sm:text-[34px] lg:text-[42px] lg:leading-[1.05] lg:tracking-[-0.03em]">
         Cloud today, on-device tomorrow — same interface.
       </h2>

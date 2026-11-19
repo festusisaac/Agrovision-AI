@@ -23,42 +23,44 @@ export default function CtaFooter() {
           />
 
           <div className="relative z-10">
-            <h2 className="font-heading max-w-[20ch] text-[24px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[36px] sm:leading-[1.06] sm:tracking-[-0.03em]">
-              Try the prototype, then read the write-up.
+            <h2 className="font-heading max-w-[22ch] text-[24px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[36px] sm:leading-[1.06] sm:tracking-[-0.03em]">
+              Ready to transform African agricultural productivity?
             </h2>
-            <p className="mt-3.5 text-[15.5px] text-fg-muted">
-              Live demo, public repository and Kaggle write-up — AI for Social Impact track.
+            <p className="mt-3.5 max-w-[50ch] text-[15.5px] text-fg-muted">
+              Explore the live multimodal diagnosis platform, test the USSD feature-phone gateway, or reach out to partner.
             </p>
           </div>
 
           <div className="relative z-10 flex flex-wrap gap-3">
             <Link
-              href="https://agrovision-ai-gray.vercel.app/"
+              href="/app/dashboard"
               className="rounded-xl bg-leaf px-[26px] py-[15px] font-medium text-[15px] text-[#0C130F] transition-colors hover:bg-[var(--color-accent-hover)]"
             >
-              Live demo
+              Launch Platform
             </Link>
             <a
               href="https://github.com/festusisaac/Agrovision-AI"
-              className="rounded-xl border px-[26px] py-[15px] font-medium text-[15px]"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border px-[26px] py-[15px] font-medium text-[15px] transition-colors hover:bg-white/5"
               style={{ borderColor: "rgba(242,240,230,0.2)" }}
             >
-              GitHub repo
+              GitHub Repo
             </a>
             <a
-              href="#"
-              className="rounded-xl border px-[26px] py-[15px] font-medium text-[15px]"
-              style={{ borderColor: "rgba(242,240,230,0.2)" }}
+              href="mailto:invest@agrovision.ai?subject=AgroVision%20AI%20-%20Investment%20%26%20Partnership%20Inquiry"
+              className="rounded-xl border px-[26px] py-[15px] font-medium text-[15px] text-leaf transition-colors hover:bg-leaf/10"
+              style={{ borderColor: "rgba(163,230,53,0.35)" }}
             >
-              Kaggle write-up
+              Contact Founders ↗
             </a>
           </div>
         </div>
       </section>
 
-      <footer className="flex flex-wrap justify-between gap-6 border-t border-[var(--color-border)] py-8 pb-14 text-[13px] text-fg-faint">
-        <div>AgroVision AI — Build with Gemma: AI for Africa, Minna 2026</div>
-        <div className="font-mono text-[11.5px]">Tracks: Social Impact · Multimodal · Edge AI · Local Language</div>
+      <footer className="flex flex-wrap items-center justify-between gap-6 border-t border-[var(--color-border)] py-8 pb-14 text-[13px] text-fg-faint">
+        <div>© 2026 AgroVision AI. Multimodal Edge Intelligence for African Agriculture.</div>
+        <div className="font-mono text-[11.5px]">Lagos & Minna, Nigeria · invest@agrovision.ai</div>
       </footer>
     </>
   );

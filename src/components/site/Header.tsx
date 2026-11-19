@@ -2,10 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 const NAV_LINKS = [
-  { href: "#demo", label: "Live demo" },
-  { href: "#problem", label: "Problem" },
-  { href: "#architecture", label: "Architecture" },
-  { href: "#gemma", label: "Gemma 4" },
+  { href: "#demo", label: "Overview" },
+  { href: "#problem", label: "The Problem" },
+  { href: "#business", label: "Market & Model" },
+  { href: "#architecture", label: "Edge Architecture" },
+  { href: "#gemma", label: "AI Engine" },
 ];
 
 export default function Header() {
@@ -31,7 +32,7 @@ export default function Header() {
         href="/app/dashboard"
         className="inline-flex items-center gap-2 rounded-full bg-leaf px-[18px] py-[11px] font-medium text-[14px] text-[#0C130F] transition-colors hover:bg-[var(--color-accent-hover)]"
       >
-        Try the prototype
+        Launch Live App
       </Link>
     </header>
   );

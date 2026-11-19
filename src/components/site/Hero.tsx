@@ -68,7 +68,7 @@ export default function Hero() {
           style={{ borderColor: "rgba(163,230,53,0.25)", background: "rgba(163,230,53,0.06)" }}
         >
           <span className="animate-agv-pulse h-1.5 w-1.5 rounded-full bg-leaf" />
-          Build with Gemma · Minna 2026
+          Next-Gen AgTech · Multimodal Edge Intelligence
         </div>
 
         <h1
@@ -89,14 +89,14 @@ export default function Hero() {
             href="/app/dashboard"
             className="rounded-xl bg-leaf px-[26px] py-[15px] font-medium text-[15px] text-[#0C130F] transition-colors hover:bg-[var(--color-accent-hover)]"
           >
-            Open the full app
+            Launch Live Platform
           </Link>
           <a
-            href="#architecture"
-            className="rounded-xl border px-[26px] py-3.5 font-medium text-[15px]"
+            href="#business"
+            className="rounded-xl border px-[26px] py-3.5 font-medium text-[15px] transition-colors hover:border-leaf/50"
             style={{ borderColor: "rgba(242,240,230,0.18)" }}
           >
-            See the architecture
+            Market & Business Model
           </a>
         </div>
 

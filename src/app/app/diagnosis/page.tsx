@@ -9,6 +9,7 @@ import {
   getScanSessionSnapshot,
   getServerScanSessionSnapshot,
   markScanSessionSaved,
+  setScanSession,
   subscribeScanSession,
 } from "@/lib/scanSession";
 import { addHistoryEntry, getHistorySnapshot, getServerHistorySnapshot, subscribeHistory } from "@/lib/storage";
@@ -96,6 +97,82 @@ function RiskChip({ label, value, tone }: { label: string; value: string; tone: 
   );
 }
 
+const SAMPLE_DIAGNOSIS_SESSION = {
+  crop: "Maize",
+  imageDataUrl: "/images/samples/maize-blight.jpg",
+  capturedAt: Date.now() - 1000 * 60 * 15,
+  elapsedMs: 2450,
+  result: {
+    label: "Northern Corn Leaf Blight & Armyworm",
+    crop: "Maize",
+    type: "disease" as const,
+    confidence: 0.94,
+    severity: "high" as const,
+    description:
+      "Cigar-shaped grayish lesions with distinct margins and active caterpillar windowpane feeding on mid-whorl leaves.",
+    explanation:
+      "Fungal spores of Exserohilum turcicum have penetrated the lower canopy leaves, while early-instar Fall Armyworm larvae are feeding inside the whorl. If left untreated during the vegetative stage, photosynthetic capacity will drop by over 40%, significantly reducing cob yield.",
+    visualEvidence:
+      "Elongated, elliptical lesions with dark fungal borders alongside characteristic irregular chewed holes and caterpillar frass deposits.",
+    confidenceBreakdown: [
+      { label: "Lesion morphology & margin pattern", score: 0.96 },
+      { label: "Whorl feeding holes & caterpillar presence", score: 0.94 },
+      { label: "Canopy layer spread & foliage color", score: 0.92 },
+    ],
+    treatment: [
+      "Spray Mancozeb or Azoxystrobin fungicide thoroughly on leaves.",
+      "Apply Emamectin benzoate or biological neem oil directly into the whorl.",
+      "Remove heavily infested dead leaves and destroy them outside the field.",
+    ],
+    products: [
+      {
+        name: "Neem Seed Oil (Biological)",
+        category: "organic" as const,
+        dose: "5 ml per litre of water into the whorl",
+        timing: "Early morning or late afternoon",
+        reEntryInterval: "4 hours",
+        harvestWaitingPeriod: "1 day",
+        costTier: "low" as const,
+      },
+      {
+        name: "Mancozeb 80% WP",
+        category: "chemical" as const,
+        dose: "2.5 g per litre of water",
+        timing: "Apply at calm wind conditions",
+        reEntryInterval: "24 hours",
+        harvestWaitingPeriod: "14 days",
+        costTier: "medium" as const,
+      },
+      {
+        name: "Emamectin Benzoate 5% SG",
+        category: "chemical" as const,
+        dose: "0.4 g per litre into the leaf whorl",
+        timing: "Late afternoon when larvae feed",
+        reEntryInterval: "24 hours",
+        harvestWaitingPeriod: "7 days",
+        costTier: "medium" as const,
+      },
+    ],
+    prevention: [
+      "Plant certified blight-resistant hybrid maize varieties.",
+      "Rotate with non-host legumes like cowpea or groundnut next season.",
+      "Ensure proper plant spacing for sunlight and air circulation.",
+    ],
+    safety: {
+      protectiveEquipment: ["Rubber gloves", "Protective eyewear", "Nose mask", "Long sleeve overalls"],
+      applicationTiming: "Spray early morning (7–9 AM) or dusk in calm weather",
+      reEntryInterval: "24 hours after chemical application",
+      harvestWaitingPeriod: "14 days minimum before harvesting green maize",
+    },
+    photoQuality: {
+      ok: true,
+      cautions: [],
+    },
+    needsRetake: false,
+    retakeInstruction: "",
+  },
+};
+
 export default function DiagnosisPage() {
   const router = useRouter();
   const { language, t } = useAppPrefs();
@@ -138,13 +215,28 @@ export default function DiagnosisPage() {
     return (
       <div className="animate-agv-rise max-w-[1100px]">
         <Card className="p-10 text-center">
-          <p className="text-[15px] text-fg-muted">{t.noScanYet}</p>
-          <Link
-            href="/app/scan"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-[11px] bg-leaf px-5 py-3 font-medium text-[14px] text-[#0A0F0C] transition-colors hover:bg-[var(--color-accent-hover)]"
-          >
-            <Camera className="h-4 w-4" /> {t.startAScan}
-          </Link>
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-leaf/10 text-leaf">
+            <Camera className="h-6 w-6" />
+          </div>
+          <h2 className="font-heading mt-4 text-[22px] font-semibold">{t.noScanYet}</h2>
+          <p className="mx-auto mt-2 max-w-[44ch] text-[14px] text-fg-muted">
+            Take a new leaf photo using the scanner, or load an instant sample diagnosis report to review the full diagnostic output.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/app/scan"
+              className="inline-flex items-center gap-1.5 rounded-[11px] bg-leaf px-5 py-3 font-medium text-[14px] text-[#0A0F0C] transition-colors hover:bg-[var(--color-accent-hover)]"
+            >
+              <Camera className="h-4 w-4" /> {t.startAScan}
+            </Link>
+            <button
+              type="button"
+              onClick={() => setScanSession(SAMPLE_DIAGNOSIS_SESSION)}
+              className="inline-flex items-center gap-1.5 rounded-[11px] border border-[var(--color-border)] px-5 py-3 font-medium text-[14px] hover:bg-[var(--color-surface)]"
+            >
+              ✦ Load Sample Diagnosis Report
+            </button>
+          </div>
         </Card>
       </div>
     );

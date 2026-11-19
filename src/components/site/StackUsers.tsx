@@ -1,15 +1,15 @@
 import Image from "next/image";
 
 const STACK = [
-  "Next.js App Router",
-  "Tailwind CSS",
-  "Route Handlers",
-  "Gemma 4",
-  "Vertex AI",
-  "Ollama",
-  "MediaRecorder API",
-  "Web Speech API",
-  "IndexedDB",
+  "Next.js App Router (Turbopack)",
+  "Gemma 4 Edge Multimodal AI",
+  "Google Cloud Vertex AI",
+  "Local Ollama Edge Runtime",
+  "Postgres Outbreak Intelligence (Neon)",
+  "YarnGPT Nigerian Neural TTS",
+  "Africa's Talking GSM / USSD Gateway",
+  "MediaRecorder & Web Speech",
+  "IndexedDB Offline Storage",
 ];
 
 const USERS = [
@@ -23,9 +23,9 @@ export default function StackUsers() {
   return (
     <section className="grid grid-cols-1 gap-16 border-t border-[var(--color-border)] py-24 lg:grid-cols-2">
       <div>
-        <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">05 — Stack</div>
+        <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">05 — Engineering & Moat</div>
         <h2 className="font-heading mt-4 mb-6 text-[32px] leading-[1.1] font-semibold tracking-[-0.025em]">
-          Built in a day
+          Production Architecture
         </h2>
         <div className="flex flex-wrap gap-2">
           {STACK.map((s) => (
@@ -41,7 +41,7 @@ export default function StackUsers() {
       </div>
 
       <div>
-        <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">06 — Who it serves</div>
+        <div className="font-mono text-[11px] tracking-[0.12em] text-warn uppercase">07 — Target Market</div>
         <h2 className="font-heading mt-4 mb-5 text-[32px] leading-[1.1] font-semibold tracking-[-0.025em]">
           Target users
         </h2>

@@ -26,6 +26,30 @@ const CROPS = [
   "Okra",
 ];
 
+const DEMO_SAMPLES = [
+  {
+    crop: "Maize",
+    title: "Maize",
+    diagnosis: "Leaf Blight & Armyworm",
+    sub: "Exserohilum turcicum",
+    src: "/images/samples/maize-blight.jpg",
+  },
+  {
+    crop: "Tomato",
+    title: "Tomato",
+    diagnosis: "Early Blight",
+    sub: "Alternaria solani",
+    src: "/images/samples/tomato-blight.jpg",
+  },
+  {
+    crop: "Cassava",
+    title: "Cassava",
+    diagnosis: "Mosaic Disease (CMD)",
+    sub: "Begomovirus / Whitefly vector",
+    src: "/images/samples/cassava-mosaic.jpg",
+  },
+];
+
 export default function ScanPage() {
   const router = useRouter();
   const { t, edge, engineLabel } = useAppPrefs();
@@ -37,6 +61,7 @@ export default function ScanPage() {
   const [cropping, setCropping] = useState(false);
   const [selectedCrop, setSelectedCrop] = useState(() => getProfileSnapshot()?.crop || "Maize");
   const [customCropMode, setCustomCropMode] = useState(() => !CROPS.includes(getProfileSnapshot()?.crop || "Maize"));
+  const [loadingSample, setLoadingSample] = useState<string | null>(null);
 
   const tips = [t.scanTip1, t.scanTip2, t.scanTip3];
 
@@ -52,11 +77,31 @@ export default function ScanPage() {
     reader.readAsDataURL(file);
   }
 
-  function proceedToClarify(finalImage: string) {
+  function proceedToClarify(finalImage: string, cropOverride?: string) {
+    const targetCrop = cropOverride ?? selectedCrop;
     setImageDataUrl(finalImage);
     setCropping(false);
-    setPendingCapture(finalImage, selectedCrop);
+    setPendingCapture(finalImage, targetCrop);
     router.push("/app/scan/clarify");
+  }
+
+  async function handleSelectSample(sample: (typeof DEMO_SAMPLES)[number]) {
+    setLoadingSample(sample.title);
+    setSelectedCrop(sample.crop);
+    setCustomCropMode(false);
+    try {
+      const res = await fetch(sample.src);
+      const blob = await res.blob();
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        proceedToClarify(dataUrl, sample.crop);
+      };
+      reader.readAsDataURL(blob);
+    } catch (err) {
+      console.error("Failed to load sample image", err);
+      setLoadingSample(null);
+    }
   }
 
   return (
@@ -94,26 +139,71 @@ export default function ScanPage() {
           )}
 
           {!cropping && (
-            <div className="mt-4 flex gap-3">
-              <button
-                onClick={() => captureInputRef.current?.click()}
-                className="flex-[2] rounded-[13px] bg-leaf py-4 font-medium text-[15px] text-[#0A0F0C] transition-colors hover:bg-[var(--color-accent-hover)]"
-              >
-                {t.captureAndDiagnose}
-              </button>
-              <button
-                onClick={() => uploadInputRef.current?.click()}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[var(--color-border)] py-4 text-[14px] hover:bg-[var(--color-surface)]"
-              >
-                <Upload className="h-4 w-4" /> {t.uploadPhoto}
-              </button>
-              <button
-                onClick={() => router.push("/app/assistant")}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[var(--color-border)] py-4 text-[14px] hover:bg-[var(--color-surface)]"
-              >
-                <Mic className="h-4 w-4" /> {t.describeByVoice}
-              </button>
-            </div>
+            <>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => captureInputRef.current?.click()}
+                  className="flex-[2] rounded-[13px] bg-leaf py-4 font-medium text-[15px] text-[#0A0F0C] transition-colors hover:bg-[var(--color-accent-hover)]"
+                >
+                  {t.captureAndDiagnose}
+                </button>
+                <button
+                  onClick={() => uploadInputRef.current?.click()}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[var(--color-border)] py-4 text-[14px] hover:bg-[var(--color-surface)]"
+                >
+                  <Upload className="h-4 w-4" /> {t.uploadPhoto}
+                </button>
+                <button
+                  onClick={() => router.push("/app/assistant")}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[13px] border border-[var(--color-border)] py-4 text-[14px] hover:bg-[var(--color-surface)]"
+                >
+                  <Mic className="h-4 w-4" /> {t.describeByVoice}
+                </button>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.1em] text-leaf uppercase">
+                    <span className="h-1.5 w-1.5 rounded-full bg-leaf" />
+                    Investor & Desk Demo Mode
+                  </div>
+                  <span className="text-[11.5px] text-fg-faint">No live plant? Click to test live Gemma AI</span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  {DEMO_SAMPLES.map((s) => (
+                    <button
+                      key={s.title}
+                      type="button"
+                      onClick={() => handleSelectSample(s)}
+                      disabled={loadingSample !== null}
+                      className="group flex flex-col items-start rounded-xl border border-[var(--color-border)] p-2.5 text-left transition-all hover:border-leaf/50 hover:bg-leaf/5"
+                    >
+                      <div className="relative h-28 w-full overflow-hidden rounded-lg">
+                        <Image
+                          src={s.src}
+                          alt={s.title}
+                          fill
+                          sizes="220px"
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
+                        {loadingSample === s.title && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                            <span className="h-5 w-5 animate-spin rounded-full border-2 border-leaf/30 border-t-leaf" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2 flex w-full items-baseline justify-between">
+                        <span className="font-heading text-[13.5px] font-semibold text-fg">{s.title}</span>
+                        <span className="font-mono text-[9.5px] text-warn">Sample</span>
+                      </div>
+                      <div className="text-[11.5px] text-leaf line-clamp-1">{s.diagnosis}</div>
+                      <div className="text-[10.5px] text-fg-faint">{s.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
 

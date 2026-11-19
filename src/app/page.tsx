@@ -2,6 +2,7 @@ import Header from "@/components/site/Header";
 import Hero from "@/components/site/Hero";
 import Problem from "@/components/site/Problem";
 import Solution from "@/components/site/Solution";
+import BusinessModel from "@/components/site/BusinessModel";
 import Architecture from "@/components/site/Architecture";
 import GemmaIntegration from "@/components/site/GemmaIntegration";
 import StackUsers from "@/components/site/StackUsers";
@@ -14,6 +15,7 @@ export default function Home() {
       <Hero />
       <Problem />
       <Solution />
+      <BusinessModel />
       <Architecture />
       <GemmaIntegration />
       <StackUsers />
