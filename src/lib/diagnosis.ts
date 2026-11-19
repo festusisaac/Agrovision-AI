@@ -116,22 +116,53 @@ export function hasSafetyInfo(safety: DiagnosisSafety): boolean {
   );
 }
 
+const SPEECH_STRINGS: Record<
+  string,
+  { rec: string; prev: string; safety: string; wear: string }
+> = {
+  en: {
+    rec: "Recommended",
+    prev: "To prevent this in the future",
+    safety: "For your safety",
+    wear: "Wear",
+  },
+  ha: {
+    rec: "Abin da aka ba da shawara",
+    prev: "Don riga-kafi a nan gaba",
+    safety: "Don kare lafiyar ku",
+    wear: "Sanya",
+  },
+  yo: {
+    rec: "Oògùn ti a dábàá",
+    prev: "Láti dènà èyí ní ọjọ́ iwájú",
+    safety: "Fún ààbò rẹ",
+    wear: "Wọ",
+  },
+  ig: {
+    rec: "Ọgwụ a kwadoro",
+    prev: "Iji gbochie nke a n'ọdịnihu",
+    safety: "Maka nchekwa gị",
+    wear: "Yiri",
+  },
+};
+
 /** Builds the full spoken text for a diagnosis — description, treatment, prevention, and safety notes. */
-export function buildDiagnosisSpeechText(diagnosis: DiagnosisResult): string {
+export function buildDiagnosisSpeechText(diagnosis: DiagnosisResult, language: string = "en"): string {
+  const s = SPEECH_STRINGS[language] || SPEECH_STRINGS.en;
   const parts = [diagnosis.explanation || diagnosis.description, ...diagnosis.treatment];
   const primaryProduct = diagnosis.products[0];
   if (primaryProduct) {
-    parts.push(`Recommended: ${primaryProduct.name}, ${primaryProduct.dose}`);
+    parts.push(`${s.rec}: ${primaryProduct.name}, ${primaryProduct.dose}`);
   }
   if (diagnosis.prevention.length > 0) {
-    parts.push("To prevent this in the future:", ...diagnosis.prevention);
+    parts.push(`${s.prev}:`, ...diagnosis.prevention);
   }
 
   const { safety } = diagnosis;
   if (hasSafetyInfo(safety)) {
-    parts.push("For your safety:");
+    parts.push(`${s.safety}:`);
     if (safety.protectiveEquipment.length > 0) {
-      parts.push(`Wear ${safety.protectiveEquipment.join(", ")}`);
+      parts.push(`${s.wear} ${safety.protectiveEquipment.join(", ")}`);
     }
     if (safety.applicationTiming && safety.applicationTiming !== NOT_APPLICABLE) {
       parts.push(safety.applicationTiming);

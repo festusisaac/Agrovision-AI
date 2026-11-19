@@ -168,7 +168,10 @@ damage is more reliable than an uncertain visual read:`;
   }
   const languageName = language ? LANGUAGE_NAMES[language] : undefined;
   if (languageName && languageName !== "English") {
-    prompt += `\n\nWrite the "label", "description", "explanation", "visualEvidence", "treatment", "prevention", "safety", "retakeInstruction", the "cautions" strings inside "photoQuality", and the "label"/"dose"/"timing" fields inside "confidenceBreakdown"/"products" in ${languageName}, in a way an everyday ${languageName} speaker with no technical background would understand. Keep "type", "severity", "crop", "category", and "costTier" in English exactly as specified above.`;
+    prompt = `CRITICAL MANDATORY INSTRUCTION: You MUST provide your entire diagnosis in the ${languageName} language as spoken in Nigeria.
+Every text field ("label", "description", "explanation", "visualEvidence", "treatment", "prevention", "safety", "retakeInstruction", and "cautions") MUST be written purely in natural, everyday ${languageName}.
+DO NOT output these explanations in English. Keep only the fixed enum values for "type", "severity", "crop", "category", and "costTier" in English.\n\n` + prompt;
+    prompt += `\n\nFINAL REMINDER: The farmer speaks ${languageName}. Generate the full explanation, treatment steps, and prevention entirely in ${languageName}.`;
   }
 
   const encoder = new TextEncoder();

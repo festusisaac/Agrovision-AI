@@ -97,81 +97,304 @@ function RiskChip({ label, value, tone }: { label: string; value: string; tone: 
   );
 }
 
-const SAMPLE_DIAGNOSIS_SESSION = {
-  crop: "Maize",
-  imageDataUrl: "/images/samples/maize-blight.jpg",
-  capturedAt: Date.now() - 1000 * 60 * 15,
-  elapsedMs: 2450,
-  result: {
-    label: "Northern Corn Leaf Blight & Armyworm",
+function getSampleDiagnosisSession(lang: string) {
+  const common = {
     crop: "Maize",
-    type: "disease" as const,
-    confidence: 0.94,
-    severity: "high" as const,
-    description:
-      "Cigar-shaped grayish lesions with distinct margins and active caterpillar windowpane feeding on mid-whorl leaves.",
-    explanation:
-      "Fungal spores of Exserohilum turcicum have penetrated the lower canopy leaves, while early-instar Fall Armyworm larvae are feeding inside the whorl. If left untreated during the vegetative stage, photosynthetic capacity will drop by over 40%, significantly reducing cob yield.",
-    visualEvidence:
-      "Elongated, elliptical lesions with dark fungal borders alongside characteristic irregular chewed holes and caterpillar frass deposits.",
-    confidenceBreakdown: [
-      { label: "Lesion morphology & margin pattern", score: 0.96 },
-      { label: "Whorl feeding holes & caterpillar presence", score: 0.94 },
-      { label: "Canopy layer spread & foliage color", score: 0.92 },
-    ],
-    treatment: [
-      "Spray Mancozeb or Azoxystrobin fungicide thoroughly on leaves.",
-      "Apply Emamectin benzoate or biological neem oil directly into the whorl.",
-      "Remove heavily infested dead leaves and destroy them outside the field.",
-    ],
-    products: [
-      {
-        name: "Neem Seed Oil (Biological)",
-        category: "organic" as const,
-        dose: "5 ml per litre of water into the whorl",
-        timing: "Early morning or late afternoon",
-        reEntryInterval: "4 hours",
-        harvestWaitingPeriod: "1 day",
-        costTier: "low" as const,
+    imageDataUrl: "/images/samples/maize-blight.jpg",
+    capturedAt: Date.now() - 1000 * 60 * 15,
+    elapsedMs: 2450,
+  };
+
+  if (lang === "ha") {
+    return {
+      ...common,
+      result: {
+        label: "Ciwon Ganyen Masara da Tsutsa (Armyworm)",
+        crop: "Maize",
+        type: "disease" as const,
+        confidence: 0.94,
+        severity: "high" as const,
+        description:
+          "Ganyen masara yana nuna tabo mai tsawo da ramukan cizon tsutsa a tsakiyar shuka.",
+        explanation:
+          "Naman gwari na Exserohilum tare da tsutsotsin Fall Armyworm ne suka mamaye sabbin ganyen masara. Idan ba a fesa magani a kan kari ba, amfanin gonar zai iya raguwa da sama da kashi arba'in a lokacin girbi.",
+        visualEvidence:
+          "Tabo mai launin toka-toka a kan ganye tare da ramukan cizon tsutsa da kashinta a cikin tsakiyar shukar.",
+        confidenceBreakdown: [
+          { label: "Siffar tabo da launin ganye", score: 0.96 },
+          { label: "Ramukan cizon tsutsa a tsakiya", score: 0.94 },
+          { label: "Yaduwar cuta a jikin shuka", score: 0.92 },
+        ],
+        treatment: [
+          "Fesa maganin Mancozeb ko Azoxystrobin a kan ganye cikin gaggawa.",
+          "Zuba maganin Emamectin benzoate ko man Neem a tsakiyar ganyen masara.",
+          "Kwashe ganyen da suka kamu da cutar a kona su nesa da gona.",
+        ],
+        products: [
+          {
+            name: "Man Neem (Na Halitta)",
+            category: "organic" as const,
+            dose: "Cokali 5 a kowace lita ta ruwa a zuba a tsakiya",
+            timing: "Da safe ko da yamma lokacin sanyi",
+            reEntryInterval: "Awoyi 4",
+            harvestWaitingPeriod: "Rana 1",
+            costTier: "low" as const,
+          },
+          {
+            name: "Mancozeb 80% WP",
+            category: "chemical" as const,
+            dose: "Gram 2.5 a kowace lita ta ruwa",
+            timing: "Fesa a lokacin da babu iska mai karfi",
+            reEntryInterval: "Awoyi 24",
+            harvestWaitingPeriod: "Kwanaki 14",
+            costTier: "medium" as const,
+          },
+          {
+            name: "Emamectin Benzoate 5% SG",
+            category: "chemical" as const,
+            dose: "Gram 0.4 a kowace lita ta ruwa a zuba a tsakiya",
+            timing: "Da yamma lokacin da tsutsotsi ke cin abinci",
+            reEntryInterval: "Awoyi 24",
+            harvestWaitingPeriod: "Kwanaki 7",
+            costTier: "medium" as const,
+          },
+        ],
+        prevention: [
+          "Yi amfani da ingantaccen irin masara mai jure cututtuka.",
+          "Juya shuka a kaka mai zuwa tare da wake ko gyada.",
+          "Bada isasshen fili tsakanin shuka don samun hasken rana da iska.",
+        ],
+        safety: {
+          protectiveEquipment: ["Safofin hannu na roba", "Gilashin kariya", "Takunkumin fuska", "Tufafin kariya"],
+          applicationTiming: "Fesa da sassafe (karfe 7-9 na safe) ko da yamma lokacin natsuwa",
+          reEntryInterval: "Awoyi 24 bayan fesa maganin sinadari",
+          harvestWaitingPeriod: "Kalla kwanaki 14 kafin girbin masara",
+        },
+        photoQuality: { ok: true, cautions: [] },
+        needsRetake: false,
+        retakeInstruction: "",
       },
-      {
-        name: "Mancozeb 80% WP",
-        category: "chemical" as const,
-        dose: "2.5 g per litre of water",
-        timing: "Apply at calm wind conditions",
-        reEntryInterval: "24 hours",
-        harvestWaitingPeriod: "14 days",
-        costTier: "medium" as const,
+    };
+  }
+
+  if (lang === "yo") {
+    return {
+      ...common,
+      result: {
+        label: "Àrùn Èso Àgbàdo àti Kòkòrò Fall Armyworm",
+        crop: "Maize",
+        type: "disease" as const,
+        confidence: 0.94,
+        severity: "high" as const,
+        description:
+          "Àwọn àbàwọ́n lórí ewé àti ihò tí kòkòrò Fall Armyworm jẹ nínú ewé tuntun.",
+        explanation:
+          "Àrùn fungus àti ìdin Fall Armyworm ti bẹ̀rẹ̀ sí ní ba àwọn ewé tuntun jẹ́ ní àárín igi àgbàdo. Bí a kò bá tètè fún un ní oògùn, ìkórè rẹ lè dínkù ní ìwọ̀n ogójì nínú ọgọ́rùn-ún (40%).",
+        visualEvidence:
+          "Àwọn àbàwọ́n gígùn lórí ewé pẹ̀lú ihò tí kòkòrò jẹ lórí ewé àgbàdo náà.",
+        confidenceBreakdown: [
+          { label: "Àbàwọ́n ewé àti àwọ̀ rẹ̀", score: 0.96 },
+          { label: "Ihò jíjẹ kòkòrò nínú ewé", score: 0.94 },
+          { label: "Bí àrùn náà ṣe tàn kálẹ̀", score: 0.92 },
+        ],
+        treatment: [
+          "Fún oògùn kòkòrò Mancozeb tàbí Azoxystrobin sí ewé àgbàdo náà dáradára.",
+          "Lo oògùn epo Neem tàbí Emamectin benzoate sí àárín ewé àgbàdo náà.",
+          "Ja àwọn ewé tí ó ti bàjẹ́ kúrò kí o sì sun wọ́n jìnà sí oko.",
+        ],
+        products: [
+          {
+            name: "Epo Neem (Ti Àdánidá)",
+            category: "organic" as const,
+            dose: "Síbí 5 sínú lita omi kan, da á sí àárín ewé",
+            timing: "Ní kùtùkùtù òwúrọ̀ tàbí ìrọ̀lẹ́",
+            reEntryInterval: "Wákàtí 4",
+            harvestWaitingPeriod: "Ọjọ́ 1",
+            costTier: "low" as const,
+          },
+          {
+            name: "Mancozeb 80% WP",
+            category: "chemical" as const,
+            dose: "Giramu 2.5 sínú lita omi kan",
+            timing: "Fún nígbà tí kò bá sí afẹ́fẹ́ líle",
+            reEntryInterval: "Wákàtí 24",
+            harvestWaitingPeriod: "Ọjọ́ 14",
+            costTier: "medium" as const,
+          },
+          {
+            name: "Emamectin Benzoate 5% SG",
+            category: "chemical" as const,
+            dose: "Giramu 0.4 sínú lita omi kan",
+            timing: "Ní ìrọ̀lẹ́ nígbà tí àwọn kòkòrò ń jẹun",
+            reEntryInterval: "Wákàtí 24",
+            harvestWaitingPeriod: "Ọjọ́ 7",
+            costTier: "medium" as const,
+          },
+        ],
+        prevention: [
+          "Gbin irúgbìn àgbàdo tó le kojú àwọn àrùn wọ̀nyí.",
+          "Yí irúgbìn padà ní àsìkò tó ń bọ̀ pẹ̀lú ẹ̀wà tàbí ẹ̀pà.",
+          "Fi ààyè sí àárín àwọn igi àgbàdo fún afẹ́fẹ́ àti ìmọ́lẹ̀ oòrùn.",
+        ],
+        safety: {
+          protectiveEquipment: ["Ibeji ọwọ́ roba", "Gilaasi aabo", "Iboju", "Aṣọ aabo to bo gbogbo ara"],
+          applicationTiming: "Fún oògùn ní àárọ̀ kùtù (ago 7-9) tàbí ìrọ̀lẹ́",
+          reEntryInterval: "Wákàtí 24 lẹ́yìn fífún oògùn",
+          harvestWaitingPeriod: "Kó kere jù ọjọ́ 14 kí o tó ká àgbàdo",
+        },
+        photoQuality: { ok: true, cautions: [] },
+        needsRetake: false,
+        retakeInstruction: "",
       },
-      {
-        name: "Emamectin Benzoate 5% SG",
-        category: "chemical" as const,
-        dose: "0.4 g per litre into the leaf whorl",
-        timing: "Late afternoon when larvae feed",
-        reEntryInterval: "24 hours",
-        harvestWaitingPeriod: "7 days",
-        costTier: "medium" as const,
+    };
+  }
+
+  if (lang === "ig") {
+    return {
+      ...common,
+      result: {
+        label: "Ọrịa Akwụkwọ Ọka na Nnukwu Nriji (Fall Armyworm)",
+        crop: "Maize",
+        type: "disease" as const,
+        confidence: 0.94,
+        severity: "high" as const,
+        description:
+          "Akwụkwọ ọka nwere ntụpọ na oghere ndị nriji tara n'ime etiti akwụkwọ ọhụrụ.",
+        explanation:
+          "Fungus na nriji Armyworm amalitela imebi akwụkwọ ọka dị n'etiti osisi ahụ. Ọ bụrụ na ejighị ọgwụ gwọọ ya ugbu a, ihe ị ga-ewe n'ubi ga-ebelata site na pasentị iri anọ (40%).",
+        visualEvidence:
+          "Ntụpọ dị ogologo na oghere nriji tara n'elu akwụkwọ ọka ahụ nke ọma.",
+        confidenceBreakdown: [
+          { label: "Ọdịdị ntụpọ na agba akwụkwọ", score: 0.96 },
+          { label: "Oghere nriji tara n'etiti akwụkwọ", score: 0.94 },
+          { label: "Otú ọrịa si gbasaa", score: 0.92 },
+        ],
+        treatment: [
+          "Fesa ọgwụ Mancozeb ma ọ bụ Azoxystrobin na akwụkwọ ọka ahụ nke ọma.",
+          "Tinye mmanụ Neem ma ọ bụ Emamectin benzoate n'etiti akwụkwọ ọka ahụ.",
+          "Wepụ akwụkwọ ndị mebiri emebi ma kpọọ ha ọkụ n'ebe dị anya site n'ubi.",
+        ],
+        products: [
+          {
+            name: "Mmanụ Neem (Nke Eke)",
+            category: "organic" as const,
+            dose: "Ngaji 5 n'ime lita mmiri ọ bụla n'ime etiti akwụkwọ",
+            timing: "N'ụtụtụ ma ọ bụ n'uhuruchi",
+            reEntryInterval: "Awa 4",
+            harvestWaitingPeriod: "Ụbọchị 1",
+            costTier: "low" as const,
+          },
+          {
+            name: "Mancozeb 80% WP",
+            category: "chemical" as const,
+            dose: "Gram 2.5 n'ime lita mmiri ọ bụla",
+            timing: "Fesa mgbe ikuku na-adịghị efe ike",
+            reEntryInterval: "Awa 24",
+            harvestWaitingPeriod: "Ụbọchị 14",
+            costTier: "medium" as const,
+          },
+          {
+            name: "Emamectin Benzoate 5% SG",
+            category: "chemical" as const,
+            dose: "Gram 0.4 n'ime lita mmiri ọ bụla n'ime etiti akwụkwọ",
+            timing: "N'uhuruchi mgbe nriji na-eri nri",
+            reEntryInterval: "Awa 24",
+            harvestWaitingPeriod: "Ụbọchị 7",
+            costTier: "medium" as const,
+          },
+        ],
+        prevention: [
+          "Kụọ mkpụrụ ọka na-anabataghị ọrịa nke ọma.",
+          "Gbanwee ihe ọkụkụ n'oge na-abịa site n'ịkụ agwa ma ọ bụ ahụekere.",
+          "Hụ na ohere dị n'etiti ọka maka ikuku na anwụ zuru oke.",
+        ],
+        safety: {
+          protectiveEquipment: ["Uwe aka roba", "Ugogbe nchekwa anya", "Ihe mkpuchi ihu", "Uwe nchekwa ahụ niile"],
+          applicationTiming: "Fesa n'isi ụtụtụ (awa 7-9) ma ọ bụ n'uhuruchi",
+          reEntryInterval: "Awa 24 mgbe afesịrị ọgwụ",
+          harvestWaitingPeriod: "Opekata mpe ụbọchị 14 tupu ewe ọka",
+        },
+        photoQuality: { ok: true, cautions: [] },
+        needsRetake: false,
+        retakeInstruction: "",
       },
-    ],
-    prevention: [
-      "Plant certified blight-resistant hybrid maize varieties.",
-      "Rotate with non-host legumes like cowpea or groundnut next season.",
-      "Ensure proper plant spacing for sunlight and air circulation.",
-    ],
-    safety: {
-      protectiveEquipment: ["Rubber gloves", "Protective eyewear", "Nose mask", "Long sleeve overalls"],
-      applicationTiming: "Spray early morning (7–9 AM) or dusk in calm weather",
-      reEntryInterval: "24 hours after chemical application",
-      harvestWaitingPeriod: "14 days minimum before harvesting green maize",
+    };
+  }
+
+  // English fallback
+  return {
+    ...common,
+    result: {
+      label: "Northern Corn Leaf Blight & Armyworm",
+      crop: "Maize",
+      type: "disease" as const,
+      confidence: 0.94,
+      severity: "high" as const,
+      description:
+        "Cigar-shaped grayish lesions with distinct margins and active caterpillar windowpane feeding on mid-whorl leaves.",
+      explanation:
+        "Fungal spores of Exserohilum turcicum have penetrated the lower canopy leaves, while early-instar Fall Armyworm larvae are feeding inside the whorl. If left untreated during the vegetative stage, photosynthetic capacity will drop by over 40%, significantly reducing cob yield.",
+      visualEvidence:
+        "Elongated, elliptical lesions with dark fungal borders alongside characteristic irregular chewed holes and caterpillar frass deposits.",
+      confidenceBreakdown: [
+        { label: "Lesion morphology & margin pattern", score: 0.96 },
+        { label: "Whorl feeding holes & caterpillar presence", score: 0.94 },
+        { label: "Canopy layer spread & foliage color", score: 0.92 },
+      ],
+      treatment: [
+        "Spray Mancozeb or Azoxystrobin fungicide thoroughly on leaves.",
+        "Apply Emamectin benzoate or biological neem oil directly into the whorl.",
+        "Remove heavily infested dead leaves and destroy them outside the field.",
+      ],
+      products: [
+        {
+          name: "Neem Seed Oil (Biological)",
+          category: "organic" as const,
+          dose: "5 ml per litre of water into the whorl",
+          timing: "Early morning or late afternoon",
+          reEntryInterval: "4 hours",
+          harvestWaitingPeriod: "1 day",
+          costTier: "low" as const,
+        },
+        {
+          name: "Mancozeb 80% WP",
+          category: "chemical" as const,
+          dose: "2.5 g per litre of water",
+          timing: "Apply at calm wind conditions",
+          reEntryInterval: "24 hours",
+          harvestWaitingPeriod: "14 days",
+          costTier: "medium" as const,
+        },
+        {
+          name: "Emamectin Benzoate 5% SG",
+          category: "chemical" as const,
+          dose: "0.4 g per litre into the leaf whorl",
+          timing: "Late afternoon when larvae feed",
+          reEntryInterval: "24 hours",
+          harvestWaitingPeriod: "7 days",
+          costTier: "medium" as const,
+        },
+      ],
+      prevention: [
+        "Plant certified blight-resistant hybrid maize varieties.",
+        "Rotate with non-host legumes like cowpea or groundnut next season.",
+        "Ensure proper plant spacing for sunlight and air circulation.",
+      ],
+      safety: {
+        protectiveEquipment: ["Rubber gloves", "Protective eyewear", "Nose mask", "Long sleeve overalls"],
+        applicationTiming: "Spray early morning (7–9 AM) or dusk in calm weather",
+        reEntryInterval: "24 hours after chemical application",
+        harvestWaitingPeriod: "14 days minimum before harvesting green maize",
+      },
+      photoQuality: {
+        ok: true,
+        cautions: [],
+      },
+      needsRetake: false,
+      retakeInstruction: "",
     },
-    photoQuality: {
-      ok: true,
-      cautions: [],
-    },
-    needsRetake: false,
-    retakeInstruction: "",
-  },
-};
+  };
+}
 
 export default function DiagnosisPage() {
   const router = useRouter();
@@ -190,10 +413,9 @@ export default function DiagnosisPage() {
 
   useEffect(() => {
     if (session?.result) {
-      preparedSpeechRef.current = prefetchSpeech(buildDiagnosisSpeechText(session.result), language);
+      preparedSpeechRef.current = prefetchSpeech(buildDiagnosisSpeechText(session.result, language), language);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.result]);
+  }, [session?.result, language]);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,7 +453,7 @@ export default function DiagnosisPage() {
             </Link>
             <button
               type="button"
-              onClick={() => setScanSession(SAMPLE_DIAGNOSIS_SESSION)}
+              onClick={() => setScanSession(getSampleDiagnosisSession(language))}
               className="inline-flex items-center gap-1.5 rounded-[11px] border border-[var(--color-border)] px-5 py-3 font-medium text-[14px] hover:bg-[var(--color-surface)]"
             >
               ✦ Load Sample Diagnosis Report
@@ -263,7 +485,7 @@ export default function DiagnosisPage() {
     setSpeechStatus("loading");
     setSpeechProgress(0);
     speechControllerRef.current = speakText(
-      buildDiagnosisSpeechText(result),
+      buildDiagnosisSpeechText(result, language),
       language,
       {
         onStart: () => setSpeechStatus("speaking"),
