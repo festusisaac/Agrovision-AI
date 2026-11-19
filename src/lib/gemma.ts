@@ -33,6 +33,8 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 // gemma-4-26b-a4b-it is a mixture-of-experts variant — noticeably faster than the
 // dense gemma-4-31b-it for the same task, at comparable quality for short answers.
 const GOOGLE_MODEL = process.env.GOOGLE_MODEL || "gemma-4-26b-a4b-it";
+// Automatic resilient fallback if Gemma 4 is experiencing high demand (503) on Google AI Studio
+const FALLBACK_GOOGLE_MODEL = "gemini-3-flash-preview";
 
 const HF_API_KEY = process.env.HF_API_KEY;
 // Hugging Face's inference marketplace routes each model through specific
@@ -86,27 +88,46 @@ async function googleGenerateContent(parts: GooglePart[], systemInstruction?: st
   if (!GOOGLE_API_KEY) {
     throw new GemmaNotConfiguredError("GOOGLE_API_KEY is not set");
   }
-  const res = await fetchWithRetry(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GOOGLE_MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...(systemInstruction ? { systemInstruction: { parts: [{ text: systemInstruction }] } } : {}),
-        contents: [{ parts }],
-        generationConfig: { thinkingConfig: { thinkingLevel: "minimal" } },
-      }),
-    }
-  );
-  if (!res.ok) {
-    throw new Error(`Google Gemini API request failed: ${res.status} ${await res.text()}`);
+
+  const modelsToTry = [GOOGLE_MODEL];
+  if (FALLBACK_GOOGLE_MODEL && !modelsToTry.includes(FALLBACK_GOOGLE_MODEL)) {
+    modelsToTry.push(FALLBACK_GOOGLE_MODEL);
   }
-  const data = await res.json();
-  const responseParts = data.candidates?.[0]?.content?.parts ?? [];
-  return responseParts
-    .filter((p: { thought?: boolean }) => !p.thought)
-    .map((p: { text?: string }) => p.text ?? "")
-    .join("");
+
+  let lastError: Error | null = null;
+  for (const model of modelsToTry) {
+    try {
+      const res = await fetchWithRetry(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...(systemInstruction ? { systemInstruction: { parts: [{ text: systemInstruction }] } } : {}),
+            contents: [{ parts }],
+            generationConfig: { thinkingConfig: { thinkingLevel: "minimal" } },
+          }),
+        }
+      );
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.warn(`[gemma] Model ${model} failed with ${res.status}: ${errorText.slice(0, 140)}`);
+        lastError = new Error(`Google Gemini API request failed: ${res.status} ${errorText}`);
+        continue;
+      }
+      const data = await res.json();
+      const responseParts = data.candidates?.[0]?.content?.parts ?? [];
+      return responseParts
+        .filter((p: { thought?: boolean }) => !p.thought)
+        .map((p: { text?: string }) => p.text ?? "")
+        .join("");
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[gemma] Error with model ${model}:`, err);
+    }
+  }
+
+  throw lastError ?? new Error("All Google models failed");
 }
 
 /** Streams text deltas as they arrive from Gemini's SSE endpoint — used for chat, so replies appear progressively instead of after one long wait. */
@@ -117,52 +138,77 @@ async function* googleGenerateContentStream(
   if (!GOOGLE_API_KEY) {
     throw new GemmaNotConfiguredError("GOOGLE_API_KEY is not set");
   }
-  const res = await fetchWithRetry(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GOOGLE_MODEL}:streamGenerateContent?alt=sse&key=${GOOGLE_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...(systemInstruction ? { systemInstruction: { parts: [{ text: systemInstruction }] } } : {}),
-        contents: [{ parts }],
-        generationConfig: { thinkingConfig: { thinkingLevel: "minimal" } },
-      }),
-    }
-  );
-  if (!res.ok || !res.body) {
-    throw new Error(`Google Gemini API request failed: ${res.status} ${await res.text()}`);
+
+  const modelsToTry = [GOOGLE_MODEL];
+  if (FALLBACK_GOOGLE_MODEL && !modelsToTry.includes(FALLBACK_GOOGLE_MODEL)) {
+    modelsToTry.push(FALLBACK_GOOGLE_MODEL);
   }
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    // Google's SSE stream uses CRLF line endings; normalize so "\n\n" reliably
-    // marks a frame boundary regardless of how chunks split across reads.
-    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
-
-    let boundary: number;
-    while ((boundary = buffer.indexOf("\n\n")) !== -1) {
-      const frame = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
-      const dataLine = frame.split("\n").find((l) => l.startsWith("data:"));
-      if (!dataLine) continue;
-      const jsonStr = dataLine.slice(5).trim();
-      if (!jsonStr) continue;
-      try {
-        const parsed = JSON.parse(jsonStr);
-        const responseParts = parsed.candidates?.[0]?.content?.parts ?? [];
-        for (const p of responseParts as { thought?: boolean; text?: string }[]) {
-          if (!p.thought && p.text) yield p.text;
+  let lastError: Error | null = null;
+  for (const model of modelsToTry) {
+    try {
+      const res = await fetchWithRetry(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${GOOGLE_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...(systemInstruction ? { systemInstruction: { parts: [{ text: systemInstruction }] } } : {}),
+            contents: [{ parts }],
+            generationConfig: { thinkingConfig: { thinkingLevel: "minimal" } },
+          }),
         }
-      } catch {
-        // Ignore partial/malformed SSE frames.
+      );
+      if (!res.ok || !res.body) {
+        const errorText = res.body ? await res.text() : "No body";
+        console.warn(`[gemma stream] Model ${model} failed with ${res.status}: ${errorText.slice(0, 140)}`);
+        lastError = new Error(`Google Gemini API request failed: ${res.status} ${errorText}`);
+        continue;
       }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let yieldedAny = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+
+        let boundary: number;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          const frame = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          const dataLine = frame.split("\n").find((l) => l.startsWith("data:"));
+          if (!dataLine) continue;
+          const jsonStr = dataLine.slice(5).trim();
+          if (!jsonStr) continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const responseParts = parsed.candidates?.[0]?.content?.parts ?? [];
+            for (const p of responseParts as { thought?: boolean; text?: string }[]) {
+              if (!p.thought && p.text) {
+                yield p.text;
+                yieldedAny = true;
+              }
+            }
+          } catch {
+            // Ignore partial/malformed SSE frames.
+          }
+        }
+      }
+
+      if (yieldedAny) {
+        return;
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[gemma stream] Error with model ${model}:`, err);
     }
   }
+
+  throw lastError ?? new Error("All Google streaming models failed");
 }
 
 async function hfChatCompletion(content: string | HfContentPart[], systemInstruction?: string): Promise<string> {
